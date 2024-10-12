@@ -22,6 +22,6 @@ public class Token {
     // Overriding: To provide a formatted string for the token
     @Override
     public String toString() {
-        return "(" + value + ", " + type + ")";
+        return "('" + value + "' , " + type + ")";
     }
 }
