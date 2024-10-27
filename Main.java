@@ -11,14 +11,14 @@ import java.util.regex.Pattern;
 public class Main {
 
     // Define sets for keywords, operators, and separators to identify tokens in the input
-    private static final Set<String> keywords = new HashSet<>(Set.of("if", "else", "return", "int", "float", "String", "Boolean"));
+    private static final Set<String> keywords = new HashSet<>(Set.of("if", "else", "return", "int", "float", "String", "Boolean", "for", "while"));
     private static final Set<String> operators = new HashSet<>(Set.of("+", "-", "*", "/", "=", "==", "!=", ">", "<", "<=", ">=", "and", "or"));
     private static final Set<String> separators = new HashSet<>(Set.of("(", ")", "{", "}", ",", ";"));
 
     public static void main(String[] args) {
         
         // Path to the input file
-        String path = "C:\\Users\\sevou\\Desktop\\HU\\HU SEM 8 (Fall)\\CSC239\\CSC239 Assignments\\Assignment 3\\LexicalAnalyzer\\input.txt";
+        String path = "C:\\Users\\sevou\\Desktop\\HU\\HU SEM 8 (Fall)\\CSC239\\CSC239 Projects\\Mini-Project\\LexicalAnalyzer\\input.txt";
 
         List<Token> tokens = new ArrayList<>(); // List to store all tokens
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
