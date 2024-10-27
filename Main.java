@@ -12,7 +12,7 @@ public class Main {
 
     // Define sets for keywords, operators, and separators to identify tokens in the input
     private static final Set<String> keywords = new HashSet<>(Set.of("if", "else", "return", "int", "float", "String", "Boolean", "for", "while"));
-    private static final Set<String> operators = new HashSet<>(Set.of("+", "-", "*", "/", "=", "==", "!=", ">", "<", "<=", ">=", "and", "or"));
+    private static final Set<String> operators = new HashSet<>(Set.of("+", "-", "*", "/", "=", "==", "!=", ">", "<", "<=", ">=", "and", "or", "++", "--"));
     private static final Set<String> separators = new HashSet<>(Set.of("(", ")", "{", "}", ",", ";"));
 
     public static void main(String[] args) {
@@ -23,9 +23,17 @@ public class Main {
         List<Token> tokens = new ArrayList<>(); // List to store all tokens
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             String line;
-            // Read each line of input file
+            int lineNumber = 1; // Track the current line number
+
+            // Read each line of the input file
             while ((line = reader.readLine()) != null) {
+                // Validate 'if', 'for', and 'while' statements and display line number on error
+                if (!validateSyntax(line, lineNumber)) {
+                    return; // Stop further tokenization if a syntax error is found
+                }
+
                 tokens.addAll(tokenize(line)); // Tokenize each line and collect tokens
+                lineNumber++; // Increment the line number after processing the line
             }
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
@@ -38,7 +46,44 @@ public class Main {
     }
 
     /**
-     * Tokenize the input line and return a list of tokens
+     * Validate the syntax of 'if', 'for', and 'while' statements using regex.
+     * Ensures that these statements are followed by parentheses and valid conditions.
+     * Includes the line number in case of an error.
+     */
+    public static boolean validateSyntax(String line, int lineNumber) {
+        // Regex to check for 'if' or 'while' statements in the form: if (condition) or while (condition)
+        String ifWhileRegex = "(if|while)\\s*\\(.*\\)";
+        
+        // Regex to check for 'for' statements in the form: for (initialization; condition; increment)
+        String forRegex = "for\\s*\\(.*;.*;.*\\)"; 
+
+        Pattern ifWhilePattern = Pattern.compile(ifWhileRegex);
+        Pattern forPattern = Pattern.compile(forRegex);
+
+        Matcher ifWhileMatcher = ifWhilePattern.matcher(line);
+        Matcher forMatcher = forPattern.matcher(line);
+
+        // Check for 'if' or 'while' syntax errors
+        if (line.contains("if") || line.contains("while")) {
+            if (!ifWhileMatcher.find()) {
+                System.err.println("Syntax error on line " + lineNumber + ": Invalid 'if' or 'while' statement.");
+                return false;
+            }
+        }
+
+        // Check for 'for' syntax errors
+        if (line.contains("for")) {
+            if (!forMatcher.find()) {
+                System.err.println("Syntax error on line " + lineNumber + ": Invalid 'for' statement.");
+                return false;
+            }
+        }
+
+        return true; // No syntax error found
+    }
+
+    /**
+     * Tokenize the input line and return a list of tokens.
      * Uses a regex pattern to match different types of tokens.
      */
     public static List<Token> tokenize(String line) {
@@ -49,7 +94,7 @@ public class Main {
                 "\"[^\"]*\"|" +       // Matches strings enclosed in double quotes (e.g., "text")
                 "\\d+\\.\\d+|" +     // Matches floating-point numbers (e.g., 3.14)
                 "\\d+([a-zA-Z_][a-zA-Z0-9_]*)?|" + // Matches numbers or invalid identifiers like "1x"
-                "==|!=|>=|<=|" +     // Matches multi-character operators (==, !=, >=, <=)
+                "==|!=|>=|<=|\\+\\+|--|" +     // Matches multi-character operators (==, !=, >=, <=, ++, --)
                 "[+\\-*/=<>!]+|" +   // Matches single-character operators (e.g., +, -, *, /, etc.)
                 "[a-zA-Z_][a-zA-Z0-9_]*|" + // Matches valid identifiers
                 "[(){};,]");         // Matches separators (e.g., parentheses, braces, commas, semicolons)
