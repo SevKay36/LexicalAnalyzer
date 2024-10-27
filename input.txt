@@ -1,4 +1,4 @@
-int x = 10; 
+int 1x = 10; 
 float y213d = 3.5; 
 String name = "John"; 
 if (x < y) {  
