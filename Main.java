@@ -44,14 +44,14 @@ public class Main {
     public static List<Token> tokenize(String line) {
         List<Token> tokens = new ArrayList<>();
         
-        // Define a regex pattern to match different token types in a single line
+        // Adjust regex pattern to treat invalid identifiers like "3121x" as a single token
         Pattern pattern = Pattern.compile(
                 "\"[^\"]*\"|" +       // Matches strings enclosed in double quotes (e.g., "text")
                 "\\d+\\.\\d+|" +     // Matches floating-point numbers (e.g., 3.14)
-                "\\d+|" +            // Matches integers (e.g., 42)
+                "\\d+([a-zA-Z_][a-zA-Z0-9_]*)?|" + // Matches numbers or invalid identifiers like "1x"
                 "==|!=|>=|<=|" +     // Matches multi-character operators (==, !=, >=, <=)
                 "[+\\-*/=<>!]+|" +   // Matches single-character operators (e.g., +, -, *, /, etc.)
-                "[a-zA-Z_][a-zA-Z0-9_]*|" + // Matches identifiers (starts with a letter/underscore, can include digits)
+                "[a-zA-Z_][a-zA-Z0-9_]*|" + // Matches valid identifiers
                 "[(){};,]");         // Matches separators (e.g., parentheses, braces, commas, semicolons)
 
         // Matcher object used to find tokens based on the defined pattern in the input line
@@ -65,7 +65,7 @@ public class Main {
         return tokens;
     }
 
-     // Classify each token based on predefined categories
+    // Classify each token based on predefined categories
     public static Token classifyToken(String token) {
         if (keywords.contains(token)) {
             return new Token(token, "KEYWORD");
@@ -73,12 +73,14 @@ public class Main {
             return new Token(token, "STRING");
         } else if (isNumber(token)) {  // Check for numbers
             return new Token(token, "NUMBER");
+        } else if (isInvalidIdentifier(token)) { // Check for invalid identifiers
+            return new Token(token, "INVALID_IDENTIFIER");
+        } else if (isIdentifier(token)) { // Check for valid identifiers
+            return new Token(token, "IDENTIFIER");
         } else if (operators.contains(token)) { // Check for operators
             return new Token(token, "OPERATOR");
         } else if (separators.contains(token)) { // Check for separators
             return new Token(token, "SEPARATOR");
-        } else if (isIdentifier(token)) { // Check for identifiers
-            return new Token(token, "IDENTIFIER");
         } else {
             return new Token(token, "UNKNOWN");
         }
@@ -97,5 +99,11 @@ public class Main {
     // Check if token is a valid identifier (variable or function name)
     public static boolean isIdentifier(String token) {
         return token.matches("[a-zA-Z_][a-zA-Z0-9_]*"); // Regex: starts with letter/underscore, may include digits
+    }
+
+    // Check if the token is an invalid identifier (starts with a digit but has letters)
+    public static boolean isInvalidIdentifier(String token) {
+        // If it starts with a digit and contains any letters, it's invalid
+        return token.matches("\\d+[a-zA-Z_]+");
     }
 }
