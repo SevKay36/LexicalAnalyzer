@@ -57,18 +57,43 @@ public class Main {
      * Includes the line number in case of an error.
      */
     public static boolean validateSyntax(String line, int lineNumber) {
-        // Regex to check for 'if' or 'while' statements in the form: if (condition) or while (condition)
-        String ifWhileRegex = "(if|while)\\s*\\(.*\\)";
-        
-        // Regex to check for 'for' statements in the form: for (initialization; condition; increment)
-        String forRegex = "for\\s*\\(.*;.*;.*\\)"; 
-
+        // Regex to match a valid identifier
+        String identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
+    
+        // Regex to match a number literal (integer or floating-point)
+        String numberLiteral = "\\d+(\\.\\d+)?";
+    
+        // Regex to match a boolean literal (true, false)
+        String booleanLiteral = "(true|false)";
+    
+        // Regex to match a string literal (enclosed in quotes)
+        String stringLiteral = "\".*\"";
+    
+        // Regex for comparison operators (>, <, >=, <=, ==)
+        String comparisonOperator = "(>|<|>=|<=|==)";
+    
+        // Full regex for 'if' or 'while' condition: (identifier|literal operator identifier|literal)
+        String ifWhileRegex = "(if|while)\\s*\\((" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*"
+                            + comparisonOperator + "\\s*"
+                            + "(" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*\\)";
+    
+        // Regex for 'for' loop (from the previous logic)
+        String forRegex = "for\\s*\\(\\s*" + "(int|float|double|String|boolean)" + "\\s+" + identifier + "\\s*=\\s*" + numberLiteral 
+                          + "\\s*;\\s*" + identifier + "\\s*" + comparisonOperator + "\\s*" + numberLiteral 
+                          + "\\s*;\\s*" + identifier + "\\s*(\\+\\+|--)\\s*\\)";
+    
+        // Regex for declaration statements (int x = 10; or String name = "John";)
+        String declarationRegex = "(int|float|double|String|boolean)\\s+" + identifier + "\\s*=\\s*" 
+                                + "(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
+    
         Pattern ifWhilePattern = Pattern.compile(ifWhileRegex);
         Pattern forPattern = Pattern.compile(forRegex);
-
+        Pattern declarationPattern = Pattern.compile(declarationRegex);
+    
         Matcher ifWhileMatcher = ifWhilePattern.matcher(line);
         Matcher forMatcher = forPattern.matcher(line);
-
+        Matcher declarationMatcher = declarationPattern.matcher(line);
+    
         // Check for 'if' or 'while' syntax errors
         if (line.contains("if") || line.contains("while")) {
             if (!ifWhileMatcher.find()) {
@@ -76,7 +101,7 @@ public class Main {
                 return false;
             }
         }
-
+    
         // Check for 'for' syntax errors
         if (line.contains("for")) {
             if (!forMatcher.find()) {
@@ -84,9 +109,17 @@ public class Main {
                 return false;
             }
         }
-
+    
+        // Check for declaration syntax errors
+        if (line.matches("(int|float|double|String|boolean).*")) {  // If it looks like a declaration statement
+            if (!declarationMatcher.find()) {
+                System.err.println("Syntax error on line " + lineNumber + ": Invalid declaration statement.");
+                return false;
+            }
+        }
+    
         return true; // No syntax error found
-    }
+    }       
 
     /**
      * Tokenize the input line and return a list of tokens.
@@ -129,6 +162,8 @@ public class Main {
             return new Token(token, "KEYWORD");
         } else if (isString(token)) {  // Check for string literals
             return new Token(token, "STRING");
+        } else if (isBoolean(token)) {  // Check for booleans
+            return new Token(token, "BOOLEAN");
         } else if (isNumber(token)) {  // Check for numbers
             return new Token(token, "NUMBER");
         } else if (isInvalidIdentifier(token)) { // Check for invalid identifiers
@@ -155,6 +190,11 @@ public class Main {
     // Check if token is a string (enclosed in quotes)
     public static boolean isString(String token) {
         return token.matches("\".*\""); // Regex: starts and ends with double quotes
+    }
+
+    // Check if token is a boolean (true or false)
+    public static boolean isBoolean(String token) {
+        return token.equals("true") || token.equals("false");
     }
 
     // Check if token is a valid identifier (variable or function name)
