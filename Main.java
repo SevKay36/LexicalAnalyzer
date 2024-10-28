@@ -1,10 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,6 +11,9 @@ public class Main {
     private static final Set<String> keywords = new HashSet<>(Set.of("if", "else", "return", "int", "float", "String", "Boolean", "for", "while"));
     private static final Set<String> operators = new HashSet<>(Set.of("+", "-", "*", "/", "=", "==", "!=", ">", "<", "<=", ">=", "and", "or", "++", "--"));
     private static final Set<String> separators = new HashSet<>(Set.of("(", ")", "{", "}", ",", ";"));
+
+    // Map to store declared variables with their types (key: identifier, value: type)
+    private static final Map<String, String> declaredVariables = new HashMap<>();
 
     public static void main(String[] args) {
 
@@ -78,21 +78,26 @@ public class Main {
                             + "(" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*\\)";
     
         // Regex for 'for' loop (from the previous logic)
-        String forRegex = "for\\s*\\(\\s*" + "(int|float|double|String|boolean)" + "\\s+" + identifier + "\\s*=\\s*" + numberLiteral 
+        String forRegex = "for\\s*\\(\\s*" + "(int|float|double|String|Boolean)" + "\\s+" + identifier + "\\s*=\\s*" + numberLiteral 
                           + "\\s*;\\s*" + identifier + "\\s*" + comparisonOperator + "\\s*" + numberLiteral 
                           + "\\s*;\\s*" + identifier + "\\s*(\\+\\+|--)\\s*\\)";
     
         // Regex for declaration statements (int x = 10; or String name = "John";)
-        String declarationRegex = "(int|float|double|String|boolean)\\s+" + identifier + "\\s*=\\s*" 
-                                + "(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
+        String declarationRegex = "(int|float|double|String|Boolean)\\s+(" + identifier + ")\\s*=\\s*(" 
+                                + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
+    
+        // Regex for reassignment statements (e.g., name = "Sevag";)
+        String reassignmentRegex = "(" + identifier + ")\\s*=\\s*(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
     
         Pattern ifWhilePattern = Pattern.compile(ifWhileRegex);
         Pattern forPattern = Pattern.compile(forRegex);
         Pattern declarationPattern = Pattern.compile(declarationRegex);
+        Pattern reassignmentPattern = Pattern.compile(reassignmentRegex);
     
         Matcher ifWhileMatcher = ifWhilePattern.matcher(line);
         Matcher forMatcher = forPattern.matcher(line);
         Matcher declarationMatcher = declarationPattern.matcher(line);
+        Matcher reassignmentMatcher = reassignmentPattern.matcher(line);
     
         // Check for 'if' or 'while' syntax errors
         if (line.contains("if") || line.contains("while")) {
@@ -111,15 +116,53 @@ public class Main {
         }
     
         // Check for declaration syntax errors
-        if (line.matches("(int|float|double|String|boolean).*")) {  // If it looks like a declaration statement
-            if (!declarationMatcher.find()) {
-                System.err.println("Syntax error on line " + lineNumber + ": Invalid declaration statement.");
+        if (declarationMatcher.find()) {
+            // Store the variable's identifier and type
+            String type = declarationMatcher.group(1);
+            String varName = declarationMatcher.group(2);
+            declaredVariables.put(varName, type);
+        }
+    
+        // Check for reassignment syntax errors
+        if (reassignmentMatcher.find()) {
+            String varName = reassignmentMatcher.group(1);
+            String value = reassignmentMatcher.group(2);
+    
+            // Ensure the variable was declared
+            if (!declaredVariables.containsKey(varName)) {
+                System.err.println("Error on line " + lineNumber + ": Variable '" + varName + "' is not declared.");
+                return false;
+            }
+    
+            // Ensure the type matches the declared type
+            String expectedType = declaredVariables.get(varName);
+            if (value == null || !isTypeMatch(expectedType, value)) {
+                System.err.println("Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + expectedType);
                 return false;
             }
         }
     
         return true; // No syntax error found
-    }       
+    }
+
+    // Helper function to check if the value matches the expected type
+    public static boolean isTypeMatch(String expectedType, String value) {
+        if (value == null) return false;  // Ensure value is not null
+
+        switch (expectedType) {
+            case "int":
+                return value.matches("\\d+");
+            case "float":
+            case "double":
+                return value.matches("\\d+\\.\\d+");
+            case "String":
+                return value.matches("\".*\"");
+            case "Boolean":  // Only allowing Boolean wrapper class, not the primitive boolean
+                return value.equals("true") || value.equals("false");
+            default:
+                return false;
+        }
+    }
 
     /**
      * Tokenize the input line and return a list of tokens.
