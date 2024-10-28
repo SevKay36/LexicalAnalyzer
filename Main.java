@@ -61,7 +61,7 @@ public class Main {
         String identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
     
         // Regex to match a number literal (integer or floating-point)
-        String numberLiteral = "\\d+(\\.\\d+)?";
+        String numberLiteral = "\\d+(\\.\\d+)?";  // Allows integers and floating-point numbers
     
         // Regex to match a boolean literal (true, false)
         String booleanLiteral = "(true|false)";
@@ -69,8 +69,8 @@ public class Main {
         // Regex to match a string literal (enclosed in quotes)
         String stringLiteral = "\".*\"";
     
-        // Regex for comparison operators (>, <, >=, <=, ==)
-        String comparisonOperator = "(>|<|>=|<=|==)";
+        // **Updated Regex for Comparison Operators** (>, <, >=, <=, ==, !=)
+        String comparisonOperator = "(==|!=|>=|<=|>|<)";
     
         // Full regex for 'if' or 'while' condition: (identifier|literal operator identifier|literal)
         String ifWhileRegex = "(if|while)\\s*\\((" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*"
@@ -128,13 +128,23 @@ public class Main {
             System.err.println("Error on line " + lineNumber + ": String value must be enclosed in double quotes.");
             return false;
         }
-    
-        // Check for general declaration syntax errors
+
+        // ** Check for int, float, and Boolean declaration errors**
         if (declarationMatcher.find()) {
-            // Store the variable's identifier and type
             String type = declarationMatcher.group(1);
             String varName = declarationMatcher.group(2);
+            String value = declarationMatcher.group(3);
+            
+            // **Type mismatch check for int, float, Boolean**
+            if (!isLiteralMatch(type, value)) {
+                System.err.println("Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + type);
+                return false;
+            }
+            
             declaredVariables.put(varName, type); // Store the variable after validation
+        } else if (line.contains("int") || line.contains("float") || line.contains("Boolean")) {
+            System.err.println("Error on line " + lineNumber + ": Invalid literal for " + getDeclarationType(line) + " declaration.");
+            return false;
         }
     
         // Check for reassignment syntax errors
@@ -150,7 +160,7 @@ public class Main {
     
             // Ensure the type matches the declared type
             String expectedType = declaredVariables.get(varName);
-            if (!isTypeMatch(expectedType, value)) {
+            if (!isLiteralMatch(expectedType, value)) {
                 System.err.println("Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + expectedType);
                 return false;
             }
@@ -159,20 +169,32 @@ public class Main {
         return true; // No syntax error found
     }
 
+    // Helper function to get the type of declaration
+    public static String getDeclarationType(String line) {
+        if (line.contains("int")) {
+            return "int";
+        } else if (line.contains("float")) {
+            return "float";
+        } else if (line.contains("Boolean")) {
+            return "Boolean";
+        }
+        return null;
+    }
+
     // Helper function to check if the value matches the expected type
-    public static boolean isTypeMatch(String expectedType, String value) {
+    public static boolean isLiteralMatch(String expectedType, String value) {
         if (value == null) return false;  // Ensure value is not null
 
         switch (expectedType) {
             case "int":
-                return value.matches("\\d+");
+                return value.matches("\\d+");  // Integers must be whole numbers with no decimals
             case "float":
             case "double":
-                return value.matches("\\d+\\.\\d+");
+                return value.matches("\\d+(\\.\\d+)?");  // Floats and doubles can have decimal points
             case "String":
                 return value.matches("\".*\""); // Ensure the value is enclosed in quotes for String
             case "Boolean":
-                return value.equals("true") || value.equals("false");
+                return value.equals("true") || value.equals("false");  // Booleans must be "true" or "false"
             default:
                 return false;
         }
@@ -264,4 +286,4 @@ public class Main {
         // If it starts with a digit and contains any letters, it's invalid
         return token.matches("\\d+[a-zA-Z_]+");
     }
-}
+}   

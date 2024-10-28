@@ -1,8 +1,8 @@
-int a = 5;
-float b = 3.5;
-String result = "initial";
+int a = 0;
+float b = 2.9;
+String result = "2";
 Boolean isValid = false;
-for (int i = 0; i < 10; i++) {
+for (int i = 0; i != 10; i++) {
     if (a > b) {
         result = "done";
     }
