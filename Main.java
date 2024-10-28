@@ -16,7 +16,7 @@ public class Main {
     private static final Set<String> separators = new HashSet<>(Set.of("(", ")", "{", "}", ",", ";"));
 
     public static void main(String[] args) {
-        
+
         // Path to the input file
         String path = "C:\\Users\\sevou\\Desktop\\HU\\HU SEM 8 (Fall)\\CSC239\\CSC239 Projects\\Mini-Project\\LexicalAnalyzer\\input.txt";
 
@@ -32,7 +32,13 @@ public class Main {
                     return; // Stop further tokenization if a syntax error is found
                 }
 
-                tokens.addAll(tokenize(line)); // Tokenize each line and collect tokens
+                // Tokenize the line and check for errors
+                List<Token> lineTokens = tokenize(line, lineNumber);
+                if (lineTokens == null) {
+                    // If an error occurred during tokenization, stop further processing
+                    return;
+                }
+                tokens.addAll(lineTokens); // Tokenize each line and collect tokens
                 lineNumber++; // Increment the line number after processing the line
             }
         } catch (IOException e) {
@@ -117,9 +123,9 @@ public class Main {
 
     /**
      * Tokenize the input line and return a list of tokens.
-     * Uses a regex pattern to match different types of tokens.
+     * If an unrecognized character or invalid identifier is found, print an error and return `null` to stop further processing.
      */
-    public static List<Token> tokenize(String line) {
+    public static List<Token> tokenize(String line, int lineNumber) {
         List<Token> tokens = new ArrayList<>();
         
         // Adjust regex pattern to treat invalid identifiers like "3121x" as a single token
@@ -130,7 +136,8 @@ public class Main {
                 "==|!=|>=|<=|\\+\\+|--|" +     // Matches multi-character operators (==, !=, >=, <=, ++, --)
                 "[+\\-*/=<>!]+|" +   // Matches single-character operators (e.g., +, -, *, /, etc.)
                 "[a-zA-Z_][a-zA-Z0-9_]*|" + // Matches valid identifiers
-                "[(){};,]");         // Matches separators (e.g., parentheses, braces, commas, semicolons)
+                "[(){};,]|" +        // Matches separators (e.g., parentheses, braces, commas, semicolons)
+                "[^\\s]");           // Matches unrecognized characters (anything not matched by above patterns)
 
         // Matcher object used to find tokens based on the defined pattern in the input line
         Matcher matcher = pattern.matcher(line);
@@ -138,13 +145,19 @@ public class Main {
         // Loop through all found tokens in the line
         while (matcher.find()) {
             String part = matcher.group();  // Get the matched token
-            tokens.add(classifyToken(part)); // Classify and add each token to the list
+            Token token = classifyToken(part, lineNumber);
+            if (token.getType().equals("UNKNOWN") || token.getType().equals("INVALID_IDENTIFIER")) {
+                // If an unrecognized character or invalid identifier is found, stop further tokenization
+                return null;
+            }
+            tokens.add(token); // Otherwise, continue adding tokens
         }
+
         return tokens;
     }
 
-    // Classify each token based on predefined categories
-    public static Token classifyToken(String token) {
+    // Classify each token based on predefined categories, handling unrecognized characters and invalid identifiers
+    public static Token classifyToken(String token, int lineNumber) {
         if (keywords.contains(token)) {
             return new Token(token, "KEYWORD");
         } else if (isString(token)) {  // Check for string literals
@@ -154,6 +167,7 @@ public class Main {
         } else if (isNumber(token)) {  // Check for numbers
             return new Token(token, "NUMBER");
         } else if (isInvalidIdentifier(token)) { // Check for invalid identifiers
+            System.err.println("Invalid identifier on line " + lineNumber + ": '" + token + "'");
             return new Token(token, "INVALID_IDENTIFIER");
         } else if (isIdentifier(token)) { // Check for valid identifiers
             return new Token(token, "IDENTIFIER");
@@ -162,6 +176,8 @@ public class Main {
         } else if (separators.contains(token)) { // Check for separators
             return new Token(token, "SEPARATOR");
         } else {
+            // Handle unrecognized characters
+            System.err.println("Unrecognized character on line " + lineNumber + ": '" + token + "'");
             return new Token(token, "UNKNOWN");
         }
     }
