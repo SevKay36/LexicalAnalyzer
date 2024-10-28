@@ -82,20 +82,25 @@ public class Main {
                           + "\\s*;\\s*" + identifier + "\\s*" + comparisonOperator + "\\s*" + numberLiteral 
                           + "\\s*;\\s*" + identifier + "\\s*(\\+\\+|--)\\s*\\)";
     
-        // Regex for declaration statements (int x = 10; or String name = "John";)
-        String declarationRegex = "(int|float|double|String|Boolean)\\s+(" + identifier + ")\\s*=\\s*(" 
-                                + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
+        // **New Regex for String Declaration** (String x = "value";)
+        String stringDeclarationRegex = "String\\s+(" + identifier + ")\\s*=\\s*" + stringLiteral + "\\s*;";
+    
+        // Regex for declaration statements (int x = 10; or Boolean isActive = true;)
+        String declarationRegex = "(int|float|double|Boolean)\\s+(" + identifier + ")\\s*=\\s*(" 
+                                + numberLiteral + "|" + booleanLiteral + ")";
     
         // Regex for reassignment statements (e.g., name = "Sevag";)
         String reassignmentRegex = "(" + identifier + ")\\s*=\\s*(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
     
         Pattern ifWhilePattern = Pattern.compile(ifWhileRegex);
         Pattern forPattern = Pattern.compile(forRegex);
+        Pattern stringDeclarationPattern = Pattern.compile(stringDeclarationRegex);
         Pattern declarationPattern = Pattern.compile(declarationRegex);
         Pattern reassignmentPattern = Pattern.compile(reassignmentRegex);
     
         Matcher ifWhileMatcher = ifWhilePattern.matcher(line);
         Matcher forMatcher = forPattern.matcher(line);
+        Matcher stringDeclarationMatcher = stringDeclarationPattern.matcher(line);
         Matcher declarationMatcher = declarationPattern.matcher(line);
         Matcher reassignmentMatcher = reassignmentPattern.matcher(line);
     
@@ -115,12 +120,21 @@ public class Main {
             }
         }
     
-        // Check for declaration syntax errors
+        // Check for string declaration errors (must be enclosed in quotes)
+        if (stringDeclarationMatcher.find()) {
+            String varName = stringDeclarationMatcher.group(1);
+            declaredVariables.put(varName, "String"); // Store the variable after validation
+        } else if (line.contains("String")) {
+            System.err.println("Error on line " + lineNumber + ": String value must be enclosed in double quotes.");
+            return false;
+        }
+    
+        // Check for general declaration syntax errors
         if (declarationMatcher.find()) {
             // Store the variable's identifier and type
             String type = declarationMatcher.group(1);
             String varName = declarationMatcher.group(2);
-            declaredVariables.put(varName, type);
+            declaredVariables.put(varName, type); // Store the variable after validation
         }
     
         // Check for reassignment syntax errors
@@ -136,7 +150,7 @@ public class Main {
     
             // Ensure the type matches the declared type
             String expectedType = declaredVariables.get(varName);
-            if (value == null || !isTypeMatch(expectedType, value)) {
+            if (!isTypeMatch(expectedType, value)) {
                 System.err.println("Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + expectedType);
                 return false;
             }
@@ -156,8 +170,8 @@ public class Main {
             case "double":
                 return value.matches("\\d+\\.\\d+");
             case "String":
-                return value.matches("\".*\"");
-            case "Boolean":  // Only allowing Boolean wrapper class, not the primitive boolean
+                return value.matches("\".*\""); // Ensure the value is enclosed in quotes for String
+            case "Boolean":
                 return value.equals("true") || value.equals("false");
             default:
                 return false;
