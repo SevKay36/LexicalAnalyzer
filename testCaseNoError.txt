@@ -1,0 +1,82 @@
+int a = 5;
+float b = 3.14;
+String result = "success";
+Boolean isValid = true;
+
+for (int i = 0; i != 10; i++) {
+    if (a > b) {
+        result = "done";
+    }
+}
+
+while (a != 0 && a < 9) {
+    a--;
+}
+
+result = "final";
+
+
+EXPECTED OUTPUT:
+('int' , KEYWORD)
+('a' , IDENTIFIER)
+('=' , OPERATOR)
+('5' , NUMBER)
+(';' , SEPARATOR)
+('float' , KEYWORD)
+('b' , IDENTIFIER)
+('=' , OPERATOR)
+('3.14' , NUMBER)
+(';' , SEPARATOR)
+('String' , KEYWORD)
+('result' , IDENTIFIER)
+('=' , OPERATOR)
+('"success"' , STRING)
+(';' , SEPARATOR)
+('Boolean' , KEYWORD)
+('isValid' , IDENTIFIER)
+('=' , OPERATOR)
+('true' , BOOLEAN)
+(';' , SEPARATOR)
+('for' , KEYWORD)
+('(' , SEPARATOR)
+('int' , KEYWORD)
+('i' , IDENTIFIER)
+('=' , OPERATOR)
+('0' , NUMBER)
+(';' , SEPARATOR)
+('i' , IDENTIFIER)
+('!=' , OPERATOR)
+('10' , NUMBER)
+(';' , SEPARATOR)
+('i' , IDENTIFIER)
+('++' , OPERATOR)
+(')' , SEPARATOR)
+('{' , SEPARATOR)
+('if' , KEYWORD)
+('(' , SEPARATOR)
+('a' , IDENTIFIER)
+('>' , OPERATOR)
+('b' , IDENTIFIER)
+(')' , SEPARATOR)
+('{' , SEPARATOR)
+('result' , IDENTIFIER)
+('=' , OPERATOR)
+('"done"' , STRING)
+(';' , SEPARATOR)
+('}' , SEPARATOR)
+('}' , SEPARATOR)
+('while' , KEYWORD)
+('(' , SEPARATOR)
+('a' , IDENTIFIER)
+('!=' , OPERATOR)
+('0' , NUMBER)
+(')' , SEPARATOR)
+('{' , SEPARATOR)
+('a' , IDENTIFIER)
+('--' , OPERATOR)
+(';' , SEPARATOR)
+('}' , SEPARATOR)
+('result' , IDENTIFIER)
+('=' , OPERATOR)
+('"final"' , STRING)
+(';' , SEPARATOR)
