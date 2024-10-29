@@ -1,13 +1,23 @@
-int a = 0;
-float b = 2.9;
-String result = "2";
-Boolean isValid = false;
+int x = 42;
+float y = 12.34;
+String message = "Lexical Analysis";
+
+Boolean flag = true;
+
+if (x > y && y < 25) {   
+    message = Lexical Error;   
+}
+
 for (int i = 0; i != 10; i++) {
-    if (a > b) {
-        result = "done";
+    if (x > y || x == 10) {
+        message = "Looping!";
     }
 }
-while (a != 0) {
-    a--;
+
+while (x != 0 && y >= 5 || flag != false) {  
+    x--;
+    y = 2;
 }
-result = "final";
+
+String invalidString = "Missing quote"; 
+String result = "done";
