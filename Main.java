@@ -9,7 +9,7 @@ public class Main {
 
     // Define sets for keywords, operators, and separators to identify tokens in the input
     private static final Set<String> keywords = new HashSet<>(Set.of("if", "else", "return", "int", "float", "String", "Boolean", "for", "while"));
-    private static final Set<String> operators = new HashSet<>(Set.of("+", "-", "*", "/", "=", "==", "!=", ">", "<", "<=", ">=", "and", "or", "++", "--"));
+    private static final Set<String> operators = new HashSet<>(Set.of("+", "-", "*", "/", "=", "==", "!=", ">", "<", "<=", ">=", "&&", "||", "++", "--"));
     private static final Set<String> separators = new HashSet<>(Set.of("(", ")", "{", "}", ",", ";"));
 
     // Map to store declared variables with their types (key: identifier, value: type)
@@ -69,13 +69,17 @@ public class Main {
         // Regex to match a string literal (enclosed in quotes)
         String stringLiteral = "\".*\"";
     
-        // **Updated Regex for Comparison Operators** (>, <, >=, <=, ==, !=)
-        String comparisonOperator = "(==|!=|>=|<=|>|<)";
+        // **Updated Regex for Comparison Operators** (>, <, >=, <=, ==, !=, &&, ||)
+        String comparisonOperator = "(==|!=|>=|<=|>|<|&&|\\|\\|)";
     
-        // Full regex for 'if' or 'while' condition: (identifier|literal operator identifier|literal)
+        // Full regex for 'if' or 'while' condition with multiple conditions allowed (identifier|literal operator identifier|literal)
         String ifWhileRegex = "(if|while)\\s*\\((" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*"
                             + comparisonOperator + "\\s*"
-                            + "(" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*\\)";
+                            + "(" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")"
+                            + "(\\s*(&&|\\|\\|)\\s*"
+                            + "(" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")"
+                            + "\\s*" + comparisonOperator + "\\s*"
+                            + "(" + identifier + "|" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + "))*\\)";
     
         // Regex for 'for' loop (from the previous logic)
         String forRegex = "for\\s*\\(\\s*" + "(int|float|double|String|Boolean)" + "\\s+" + identifier + "\\s*=\\s*" + numberLiteral 
@@ -90,7 +94,7 @@ public class Main {
                                 + numberLiteral + "|" + booleanLiteral + ")";
     
         // Regex for reassignment statements (e.g., name = "Sevag";)
-        String reassignmentRegex = "(" + identifier + ")\\s*=\\s*(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
+        String reassignmentRegex = "(" + identifier + ")\\s*=\\s*(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + "|" + identifier + ")\\s*;";
     
         Pattern ifWhilePattern = Pattern.compile(ifWhileRegex);
         Pattern forPattern = Pattern.compile(forRegex);
@@ -212,7 +216,7 @@ public class Main {
                 "\"[^\"]*\"|" +       // Matches strings enclosed in double quotes (e.g., "text")
                 "\\d+\\.\\d+|" +     // Matches floating-point numbers (e.g., 3.14)
                 "\\d+([a-zA-Z_][a-zA-Z0-9_]*)?|" + // Matches numbers or invalid identifiers like "1x"
-                "==|!=|>=|<=|\\+\\+|--|" +     // Matches multi-character operators (==, !=, >=, <=, ++, --)
+                "==|!=|>=|<=|&&|\\|\\||\\+\\+|--|" +     // Matches multi-character operators (==, !=, >=, <=, &&, ||, ++, --)
                 "[+\\-*/=<>!]+|" +   // Matches single-character operators (e.g., +, -, *, /, etc.)
                 "[a-zA-Z_][a-zA-Z0-9_]*|" + // Matches valid identifiers
                 "[(){};,]|" +        // Matches separators (e.g., parentheses, braces, commas, semicolons)
@@ -286,4 +290,4 @@ public class Main {
         // If it starts with a digit and contains any letters, it's invalid
         return token.matches("\\d+[a-zA-Z_]+");
     }
-}   
+}
