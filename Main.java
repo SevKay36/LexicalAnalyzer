@@ -14,6 +14,7 @@ public class Main {
 
     // Map to store declared variables with their types (key: identifier, value: type)
     private static final Map<String, String> declaredVariables = new HashMap<>();
+    private static final List<String> errors = new ArrayList<>(); // List to store all errors
 
     public static void main(String[] args) {
 
@@ -27,27 +28,29 @@ public class Main {
 
             // Read each line of the input file
             while ((line = reader.readLine()) != null) {
-                // Validate 'if', 'for', and 'while' statements and display line number on error
-                if (!validateSyntax(line, lineNumber)) {
-                    return; // Stop further tokenization if a syntax error is found
-                }
+                // Validate 'if', 'for', and 'while' statements and collect errors
+                validateSyntax(line, lineNumber);
 
                 // Tokenize the line and check for errors
                 List<Token> lineTokens = tokenize(line, lineNumber);
-                if (lineTokens == null) {
-                    // If an error occurred during tokenization, stop further processing
-                    return;
+                if (lineTokens != null) {
+                    tokens.addAll(lineTokens); // Tokenize each line and collect tokens
                 }
-                tokens.addAll(lineTokens); // Tokenize each line and collect tokens
                 lineNumber++; // Increment the line number after processing the line
             }
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
         }
 
-        // Print each token along with its type
-        for (Token token : tokens) {
-            System.out.println(token);
+        // If there are any errors, display them and suppress token output
+        if (!errors.isEmpty()) {
+            System.out.println("Errors found:");
+            errors.forEach(System.out::println);
+        } else {
+            // Print each token along with its type only if no errors are found
+            for (Token token : tokens) {
+                System.out.println(token);
+            }
         }
     }
 
@@ -56,7 +59,7 @@ public class Main {
      * Ensures that these statements are followed by parentheses and valid conditions.
      * Includes the line number in case of an error.
      */
-    public static boolean validateSyntax(String line, int lineNumber) {
+    public static void validateSyntax(String line, int lineNumber) {
         // Regex to match a valid identifier
         String identifier = "[a-zA-Z_][a-zA-Z0-9_]*";
     
@@ -91,103 +94,92 @@ public class Main {
     
         // Regex for declaration statements (int x = 10; or Boolean isActive = true;)
         String declarationRegex = "(int|float|double|Boolean)\\s+(" + identifier + ")\\s*=\\s*(" 
-                                + numberLiteral + "|" + booleanLiteral + ")";
+                                + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + ")\\s*;";
     
         // Regex for reassignment statements (e.g., name = "Sevag";)
         String reassignmentRegex = "(" + identifier + ")\\s*=\\s*(" + numberLiteral + "|" + booleanLiteral + "|" + stringLiteral + "|" + identifier + ")\\s*;";
     
+        // Compile the regex statements into a Pattern object
         Pattern ifWhilePattern = Pattern.compile(ifWhileRegex);
         Pattern forPattern = Pattern.compile(forRegex);
         Pattern stringDeclarationPattern = Pattern.compile(stringDeclarationRegex);
         Pattern declarationPattern = Pattern.compile(declarationRegex);
         Pattern reassignmentPattern = Pattern.compile(reassignmentRegex);
     
-        Matcher ifWhileMatcher = ifWhilePattern.matcher(line);
-        Matcher forMatcher = forPattern.matcher(line);
-        Matcher stringDeclarationMatcher = stringDeclarationPattern.matcher(line);
-        Matcher declarationMatcher = declarationPattern.matcher(line);
-        Matcher reassignmentMatcher = reassignmentPattern.matcher(line);
-    
         // Check for 'if' or 'while' syntax errors
+        Matcher ifWhileMatcher = ifWhilePattern.matcher(line);
         if (line.contains("if") || line.contains("while")) {
             if (!ifWhileMatcher.find()) {
-                System.err.println("Syntax error on line " + lineNumber + ": Invalid 'if' or 'while' statement.");
-                return false;
+                errors.add("Syntax error on line " + lineNumber + ": Invalid 'if' or 'while' statement.");
             }
         }
     
         // Check for 'for' syntax errors
+        Matcher forMatcher = forPattern.matcher(line);
         if (line.contains("for")) {
             if (!forMatcher.find()) {
-                System.err.println("Syntax error on line " + lineNumber + ": Invalid 'for' statement.");
-                return false;
+                errors.add("Syntax error on line " + lineNumber + ": Invalid 'for' statement.");
             }
         }
     
         // Check for string declaration errors (must be enclosed in quotes)
+        Matcher stringDeclarationMatcher = stringDeclarationPattern.matcher(line);
         if (stringDeclarationMatcher.find()) {
             String varName = stringDeclarationMatcher.group(1);
-            declaredVariables.put(varName, "String"); // Store the variable after validation
+            
+            // Check for duplicate identifier
+            if (declaredVariables.containsKey(varName)) {
+                errors.add("Error on line " + lineNumber + ": Duplicate identifier '" + varName + "'.");
+            } else {
+                declaredVariables.put(varName, "String"); // Store the variable after validation
+            }
         } else if (line.contains("String")) {
-            System.err.println("Error on line " + lineNumber + ": String value must be enclosed in double quotes.");
-            return false;
+            errors.add("Error on line " + lineNumber + ": String value must be enclosed in double quotes.");
         }
 
         // ** Check for int, float, and Boolean declaration errors**
+        Matcher declarationMatcher = declarationPattern.matcher(line);
         if (declarationMatcher.find()) {
             String type = declarationMatcher.group(1);
             String varName = declarationMatcher.group(2);
             String value = declarationMatcher.group(3);
             
-            // **Type mismatch check for int, float, Boolean**
-            if (!isLiteralMatch(type, value)) {
-                System.err.println("Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + type);
-                return false;
+            // Check for duplicate identifier
+            if (declaredVariables.containsKey(varName)) {
+                errors.add("Error on line " + lineNumber + ": Duplicate identifier '" + varName + "'.");
+            } else {
+                // **Type mismatch check for int, float, Boolean**
+                String errorMessage = "Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + type;
+                if (!isLiteralMatch(type, value) && !errors.contains(errorMessage)) {
+                    errors.add(errorMessage);
+                }
+                declaredVariables.put(varName, type); // Store the variable after validation
             }
-            
-            declaredVariables.put(varName, type); // Store the variable after validation
-        } else if (line.contains("int") || line.contains("float") || line.contains("Boolean")) {
-            System.err.println("Error on line " + lineNumber + ": Invalid literal for " + getDeclarationType(line) + " declaration.");
-            return false;
-        }
+        } 
     
         // Check for reassignment syntax errors
+        Matcher reassignmentMatcher = reassignmentPattern.matcher(line);
         if (reassignmentMatcher.find()) {
             String varName = reassignmentMatcher.group(1);
             String value = reassignmentMatcher.group(2);
     
             // Ensure the variable was declared
             if (!declaredVariables.containsKey(varName)) {
-                System.err.println("Error on line " + lineNumber + ": Variable '" + varName + "' is not declared.");
-                return false;
-            }
-    
-            // Ensure the type matches the declared type
-            String expectedType = declaredVariables.get(varName);
-            if (!isLiteralMatch(expectedType, value)) {
-                System.err.println("Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + expectedType);
-                return false;
+                errors.add("Error on line " + lineNumber + ": Variable '" + varName + "' is not declared.");
+            } else {
+                // Ensure the type matches the declared type
+                String expectedType = declaredVariables.get(varName);
+                String errorMessage = "Error on line " + lineNumber + ": Type mismatch for variable '" + varName + "'. Expected type: " + expectedType;
+                if (expectedType != null && !isLiteralMatch(expectedType, value) && !errors.contains(errorMessage)) {
+                    errors.add(errorMessage);
+                }
             }
         }
-    
-        return true; // No syntax error found
-    }
-
-    // Helper function to get the type of declaration
-    public static String getDeclarationType(String line) {
-        if (line.contains("int")) {
-            return "int";
-        } else if (line.contains("float")) {
-            return "float";
-        } else if (line.contains("Boolean")) {
-            return "Boolean";
-        }
-        return null;
     }
 
     // Helper function to check if the value matches the expected type
     public static boolean isLiteralMatch(String expectedType, String value) {
-        if (value == null) return false;  // Ensure value is not null
+        if (value == null) return false;
 
         switch (expectedType) {
             case "int":
@@ -250,7 +242,7 @@ public class Main {
         } else if (isNumber(token)) {  // Check for numbers
             return new Token(token, "NUMBER");
         } else if (isInvalidIdentifier(token)) { // Check for invalid identifiers
-            System.err.println("Invalid identifier on line " + lineNumber + ": '" + token + "'");
+            errors.add("Invalid identifier on line " + lineNumber + ": '" + token + "'");
             return new Token(token, "INVALID_IDENTIFIER");
         } else if (isIdentifier(token)) { // Check for valid identifiers
             return new Token(token, "IDENTIFIER");
@@ -260,7 +252,7 @@ public class Main {
             return new Token(token, "SEPARATOR");
         } else {
             // Handle unrecognized characters
-            System.err.println("Unrecognized character on line " + lineNumber + ": '" + token + "'");
+            errors.add("Unrecognized character on line " + lineNumber + ": '" + token + "'");
             return new Token(token, "UNKNOWN");
         }
     }
